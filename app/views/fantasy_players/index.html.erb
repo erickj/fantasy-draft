@@ -1,0 +1,18 @@
+<h1>Listing fantasy_players</h1>
+
+<table>
+  <tr>
+  </tr>
+
+<% for fantasy_player in @fantasy_players %>
+  <tr>
+    <td><%= link_to 'Show', fantasy_player %></td>
+    <td><%= link_to 'Edit', edit_fantasy_player_path(fantasy_player) %></td>
+    <td><%= link_to 'Destroy', fantasy_player, :confirm => 'Are you sure?', :method => :delete %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New fantasy_player', new_fantasy_player_path %>

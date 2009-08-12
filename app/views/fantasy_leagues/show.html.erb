@@ -1,0 +1,62 @@
+<style type="text/css">
+#undrafted-players,
+#drafted-players {
+  float: left;
+  margin-right: 10px;
+}  
+</style>
+
+<h2>League: <%=h @fantasy_league.name %></h2>
+
+<div>
+  <h3>Teams</h3>
+  <table>
+    <tr>
+      <th>Name</th>
+      <th>Owner</th>
+      <th>Draft Order</th>
+    </tr>
+  <% for team in @fantasy_league.draft_sorted_teams %>
+    <tr>
+      <td>
+        <%= link_to team.name, team %>
+      </td>
+      <td>
+        <%=h team.owner %>
+      </td>
+      <td>
+        <% form_for(team) do |f| %>
+          <%= f.select(:draft_order, (0...@fantasy_league.size).map { |i| i + 1 }) %>
+          <%= f.submit "Update" %>
+        <% end %>
+      </td>
+    </tr>
+  <% end %>
+  </table>
+
+  <h3>Draft</h3>
+  <%= link_to 'League Draft', fantasy_league_draft_url(@fantasy_league) %>
+
+  <h3>Actions</h3>
+  <%= link_to 'Add Fantasy Team', new_fantasy_team_url %> |
+  <%= link_to 'Edit', edit_fantasy_league_path(@fantasy_league) %> |
+  <%= link_to 'Back', fantasy_leagues_path %>
+
+  <div id="drafted-players">
+    <h3>Drafted Players</h3>
+    <ul>
+      <% @fantasy_league.drafted_players.each do |p| %>
+        <li><%= p.reverse_name %></li>
+      <% end %>
+    </ul>
+  </div>
+
+  <div id="undrafted-players">
+    <h3>Undrafted Players</h3>
+    <ul>
+      <% @fantasy_league.undrafted_players.each do |p| %>
+        <li><%= p.reverse_name %></li>
+      <% end %>
+    </ul>
+  </div>
+<div>

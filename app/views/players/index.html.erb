@@ -1,0 +1,26 @@
+<h1>Players</h1>
+
+<table>
+  <tr>
+    <th>Rank</th>
+    <th>Name</th>
+    <th>Position</th>
+    <th>NFL Team</th>
+  </tr>
+
+<% for player in @players %>
+  <tr>
+    <td><%=h player.rank %></td>
+    <td><%=h player.name %></td>
+    <td><%=h player.position %></td>
+    <td><%=h player.pro_team %></td>
+    <td><%= link_to 'Show', player %></td>
+    <td><%= link_to 'Edit', edit_player_path(player) %></td>
+    <td><%= link_to 'Destroy', player, :confirm => 'Are you sure?', :method => :delete %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New player', new_player_path %>

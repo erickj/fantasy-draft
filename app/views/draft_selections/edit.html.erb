@@ -1,0 +1,12 @@
+<h1>Editing draft_selection</h1>
+
+<% form_for(@draft_selection) do |f| %>
+  <%= f.error_messages %>
+
+  <p>
+    <%= f.submit "Update" %>
+  </p>
+<% end %>
+
+<%= link_to 'Show', @draft_selection %> |
+<%= link_to 'Back', draft_selections_path %>

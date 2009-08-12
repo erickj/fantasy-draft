@@ -1,0 +1,12 @@
+<h1>Editing fantasy_player</h1>
+
+<% form_for(@fantasy_player) do |f| %>
+  <%= f.error_messages %>
+
+  <p>
+    <%= f.submit "Update" %>
+  </p>
+<% end %>
+
+<%= link_to 'Show', @fantasy_player %> |
+<%= link_to 'Back', fantasy_players_path %>

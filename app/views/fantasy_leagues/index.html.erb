@@ -1,0 +1,19 @@
+<h1>Fantasy Leagues</h1>
+
+<table>
+  <tr>
+    <th>Name</th>
+  </tr>
+
+<% for fantasy_league in @fantasy_leagues %>
+  <tr>
+    <td><%= link_to fantasy_league.name, fantasy_league %></td>
+    <td><%= link_to 'Edit', edit_fantasy_league_path(fantasy_league) %></td>
+    <td><%= link_to 'Destroy', fantasy_league, :confirm => 'Are you sure?', :method => :delete %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New fantasy_league', new_fantasy_league_path %>

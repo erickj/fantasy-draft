@@ -1,0 +1,18 @@
+<h1>Listing draft_selections</h1>
+
+<table>
+  <tr>
+  </tr>
+
+<% for draft_selection in @draft_selections %>
+  <tr>
+    <td><%= link_to 'Show', draft_selection %></td>
+    <td><%= link_to 'Edit', edit_draft_selection_path(draft_selection) %></td>
+    <td><%= link_to 'Destroy', draft_selection, :confirm => 'Are you sure?', :method => :delete %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New draft_selection', new_draft_selection_path %>

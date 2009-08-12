@@ -1,0 +1,16 @@
+<h1>Editing fantasy_league</h1>
+
+<% form_for(@fantasy_league) do |f| %>
+  <%= f.error_messages %>
+
+  <p>
+    <%= f.label :name %><br />
+    <%= f.text_field :name %>
+  </p>
+  <p>
+    <%= f.submit "Update" %>
+  </p>
+<% end %>
+
+<%= link_to 'Show', @fantasy_league %> |
+<%= link_to 'Back', fantasy_leagues_path %>

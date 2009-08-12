@@ -1,0 +1,119 @@
+<style type="text/css">
+table#draft-results {
+  position: relative;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table#draft-results th,
+table#draft-results td {
+  border: 1px solid gray;
+}
+
+table#draft-results td {
+  width: 7%;
+  padding-left: 0.5ex;
+}
+
+table#draft-results th {
+  width: 5%;
+  border: none;
+  text-align: right;
+  padding-right: 1ex;
+}
+
+.owner {
+  color: gray;
+  font-size: 65%;
+}
+
+.on-the-clock,
+.selection {
+  font-size: 80%;
+  color: #336;
+}
+
+.on-the-clock {
+  color: #0c0;
+}
+
+.current {
+  color: #fff;
+  background-color: #0c0;
+  font-weight: bold;
+}
+
+</style>
+
+<h2>Draft: <%= link_to @draft.league.name, @draft.league %></h2>
+
+<%
+rounds = @draft.total_rounds
+teams = @draft.teams
+i = 0
+%>
+
+<h3>Overview</h3>
+<dl>
+  <dt>On the Clock</dt>
+  <dd><%= @draft.current_team.name %></dd>
+  <dt>Current Round / Pick</dt>
+  <dd><%= @draft.current_round %> / <%= @draft.current_pick %></dd>
+  <dt>Overall Selection</dt>
+  <dd><%= @draft.current_overall_selection %></dd>
+</dl>
+
+<h3>Next Selection:</h3>
+<p>
+<% form_for(@draft_selection) do |f| %>
+  <%= f.hidden_field(:draft_id, { :value => @draft.id }) %>
+  <%= f.hidden_field(:fantasy_team_id, { :value => @draft.current_team.id }) %>
+  <%= f.hidden_field(:round, { :value => @draft.current_round }) %>
+  <%= f.hidden_field(:pick, { :value => @draft.current_pick }) %>
+
+  <%= player_select(f, @draft) %>
+
+  <%= f.submit "Draft Player" %>
+<% end %>
+</p>
+
+<h3>Draft Results by Round</h3>
+<% while i<rounds do %>
+  <table id="draft-results">
+    <tr>
+       <th class="<%= is_current_round?(@draft, i) ? "current" : "" %>">
+         Round <%= i+1 %>:
+       </th>
+     <% for team in teams do %>
+       <td class="<%= is_current_pick?(@draft, team, i) ? "current" : "" %>">
+         <%= "%s <span class='owner'>(%s)</span>"%[team.name,team.owner] %>
+       </td>
+     <% end %>
+    <tr>
+    <tr>
+       <th></th>
+     <% for team in teams do %>
+       <td>
+         <% if is_current_pick?(@draft, team, i) %>
+           <span class="on-the-clock">On the clock...</span>
+         <% else %>
+           <% sel = @draft.selection(i+1,teams.index(team) + 1) %>
+           <span class="selection"><%= sel ? sel.name : '' %></span>
+         <% end %>
+       </td>
+     <% end %>
+    </tr>
+  </table>
+<% teams.reverse!; i += 1; end %>
+
+<h3>Draft Results by Player</h3>
+<div id="drafted-players">
+  <ol>
+    <% @draft.league.drafted_players.each do |p| %>
+      <li><%= p.reverse_name %></li>
+    <% end %>
+  </ol>
+</div>
+
+<%= link_to 'Edit', edit_draft_path(@draft) %> |
+<%= link_to 'Back', drafts_path %>

@@ -1,0 +1,16 @@
+<h1>Editing pro_team</h1>
+
+<% form_for(@pro_team) do |f| %>
+  <%= f.error_messages %>
+
+  <p>
+    <%= f.label :name %><br />
+    <%= f.text_field :name %>
+  </p>
+  <p>
+    <%= f.submit "Update" %>
+  </p>
+<% end %>
+
+<%= link_to 'Show', @pro_team %> |
+<%= link_to 'Back', pro_teams_path %>

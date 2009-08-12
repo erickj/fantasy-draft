@@ -1,0 +1,18 @@
+<h1>NFL Teams</h1>
+
+<table>
+  <tr>
+    <th>Short Code</th>
+    <th>Team</th>
+  </tr>
+
+<% for pro_team in @pro_teams %>
+  <tr class="<%=h pro_team.id.downcase %>">
+    <td><%=h pro_team.id %></td>
+    <td>
+      <%= link_to pro_team, pro_team %>
+    </td>
+  </tr>
+<% end %>
+</table>
+

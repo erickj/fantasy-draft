@@ -1,0 +1,28 @@
+<h1>Editing fantasy_team</h1>
+
+<% form_for(@fantasy_team) do |f| %>
+  <%= f.error_messages %>
+
+  <p>
+    <%= f.label :name %><br />
+    <%= f.text_field :name %>
+  </p>
+  <p>
+    <%= f.label :owner %><br />
+    <%= f.text_field :owner %>
+  </p>
+  <p>
+    <%= f.label :draft_order %><br />
+    <%= f.select(:draft_order, (0...@fantasy_team.league.size).map { |i| i + 1 }) %>
+  </p>
+  <p>
+    <%= f.label :fantasy_league %><br />
+    <%= f.select(:fantasy_league_id, FantasyLeague.all.map { |l| [l.name, l.id] }) %>
+  </p>
+  <p>
+    <%= f.submit "Update" %>
+  </p>
+<% end %>
+
+<%= link_to 'Show', @fantasy_team %> |
+<%= link_to 'Back', fantasy_teams_path %>

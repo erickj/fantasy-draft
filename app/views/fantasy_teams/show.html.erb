@@ -1,0 +1,18 @@
+<p>
+  <b>Leage:</b>
+  <%= link_to @fantasy_team.fantasy_league.name, @fantasy_team.fantasy_league %>
+</p>
+
+<p>
+  <b>Name:</b>
+  <%=h @fantasy_team.name %>
+</p>
+
+<p>
+  <b>Owner:</b>
+  <%=h @fantasy_team.owner %>
+</p>
+
+
+<%= link_to 'Edit', edit_fantasy_team_path(@fantasy_team) %> |
+<%= link_to 'Back', fantasy_teams_path %>

@@ -1,0 +1,22 @@
+<h1>Fantasy Teams</h1>
+
+<table>
+  <tr>
+    <th>Name</th>
+    <th>Owner</th>
+  </tr>
+
+<% for fantasy_team in @fantasy_teams %>
+  <tr>
+    <td><%=h fantasy_team.name %></td>
+    <td><%=h fantasy_team.owner %></td>
+    <td><%= link_to 'Show', fantasy_team %></td>
+    <td><%= link_to 'Edit', edit_fantasy_team_path(fantasy_team) %></td>
+    <td><%= link_to 'Destroy', fantasy_team, :confirm => 'Are you sure?', :method => :delete %></td>
+  </tr>
+<% end %>
+</table>
+
+<br />
+
+<%= link_to 'New fantasy_team', new_fantasy_team_path %>
