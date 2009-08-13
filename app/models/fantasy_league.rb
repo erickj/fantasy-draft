@@ -14,12 +14,15 @@ class FantasyLeague < ActiveRecord::Base
   end
 
   def undrafted_players
-    all_players = Player.all
-    drafted = drafted_players
+    unless @undrafted_players
+      all_players = Player.all
+      drafted = drafted_players
 
-    Player.sort_by_name(all_players.reject do |p|
-      !!drafted.find { |d| d.player.id == p.id }
-    end)
+      @undrafted_players = Player.sort_by_name(all_players.reject do |p|
+        !!drafted.find { |d| d.player.id == p.id }
+      end)
+    end
+    @undrafted_players
   end
 
   def drafted_players

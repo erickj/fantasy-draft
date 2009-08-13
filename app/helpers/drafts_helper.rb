@@ -1,7 +1,7 @@
 module DraftsHelper
   def player_select(f, draft)
     players = draft.league.undrafted_players
-    f.select(:fantasy_player_id, players.map { |p| ["%s - %s"%[p.reverse_name,p.team.name], p.id] })
+    f.select(:fantasy_player_id, players.map { |p| ["%s (%s) - %s"%[p.reverse_name,p.position,p.team.name], p.id] })
   end
 
   def is_current_pick?(draft, team, idx)

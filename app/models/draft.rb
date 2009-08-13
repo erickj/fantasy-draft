@@ -1,4 +1,10 @@
 class Draft < ActiveRecord::Base
+
+  class SelectionSuggestion
+    include Singleton
+    attr_accessor :player
+  end
+
   ROUNDS = 14
   SELECTION_OFFSET = 1
 
@@ -15,6 +21,10 @@ class Draft < ActiveRecord::Base
     end
   end
 
+  def available_players
+    league.undrafted_players
+  end
+
   def selection(round, pick)
     @selections ||= draft_selections.all
 
@@ -27,8 +37,9 @@ class Draft < ActiveRecord::Base
     league.draft_sorted_teams
   end
 
-  def teams_by_round
-    current_round.even? ? teams.reverse : teams
+  def teams_by_round(round=nil)
+    round ||= current_round
+    round.even? ? teams.reverse : teams
   end
 
   def total_rounds
@@ -44,17 +55,38 @@ class Draft < ActiveRecord::Base
   end
 
   def current_round
-    sel = current_overall_selection
-    (sel.to_f / picks_per_round.to_f).ceil
+    round_from_overall_pick(current_overall_selection)
   end
 
   def current_pick
-    sel = current_overall_selection
-    ((current_round - 1) * picks_per_round - current_overall_selection).abs
+    pick_from_overall_pick(current_overall_selection)
   end
 
   def current_team
     teams_by_round[current_pick - 1]
+  end
+
+  def next_team(inc=1)
+    next_round = round_from_overall_pick(current_overall_selection + inc)
+    next_round_pick = pick_from_overall_pick(current_overall_selection + inc)
+
+    teams_by_round(next_round)[next_round_pick - 1]
+  end
+
+  def last_pick
+    last = current_overall_selection - 1
+    team = nil
+    team = selection(round_from_overall_pick(last), pick_from_overall_pick(last)) unless last < 1
+    team
+  end
+
+  def round_from_overall_pick(overall)
+    (overall.to_f / picks_per_round.to_f).ceil
+  end
+
+  def pick_from_overall_pick(overall)
+    round = round_from_overall_pick(overall)
+    ((round - 1) * picks_per_round - overall).abs
   end
 
 end

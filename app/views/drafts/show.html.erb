@@ -1,4 +1,8 @@
 <style type="text/css">
+dt {
+  font-weight: bold
+}
+
 table#draft-results {
   position: relative;
   width: 100%;
@@ -53,18 +57,21 @@ teams = @draft.teams
 i = 0
 %>
 
-<h3>Overview</h3>
 <dl>
-  <dt>On the Clock</dt>
-  <dd><%= @draft.current_team.name %></dd>
-  <dt>Current Round / Pick</dt>
+  <dt>Current Round / Selection</dt>
   <dd><%= @draft.current_round %> / <%= @draft.current_pick %></dd>
   <dt>Overall Selection</dt>
   <dd><%= @draft.current_overall_selection %></dd>
+  <dt>On the Clock</dt>
+  <dd><%= @draft.current_team.name %></dd>
+  <dt>Next Three on the Clock</dt>
+  <dd><%= @draft.next_team.name %></dd>
 </dl>
 
-<h3>Next Selection:</h3>
+<h3><%= @draft.current_team.name %> Selection:</h3>
+
 <p>
+<div id="select-a-player">
 <% form_for(@draft_selection) do |f| %>
   <%= f.hidden_field(:draft_id, { :value => @draft.id }) %>
   <%= f.hidden_field(:fantasy_team_id, { :value => @draft.current_team.id }) %>
@@ -75,6 +82,30 @@ i = 0
 
   <%= f.submit "Draft Player" %>
 <% end %>
+
+<%= link_to_function "Write in a player", "$('write-in-a-player').show(); $('select-a-player').hide();" %>
+</div>
+
+<div id="write-in-a-player" style="display: none">
+<% form_for(@draft_selection) do |f| %>
+  <%= text_field(:write_in, :name) %>
+  <%= select(:write_in, :position, Player.positions) %>
+  <%= select(:write_in, :pro_team_id, ProTeam.all.map { |t| [t.name, t.id] }) %>
+
+  <%= f.hidden_field(:draft_id, { :value => @draft.id }) %>
+  <%= f.hidden_field(:fantasy_team_id, { :value => @draft.current_team.id }) %>
+  <%= f.hidden_field(:round, { :value => @draft.current_round }) %>
+  <%= f.hidden_field(:pick, { :value => @draft.current_pick }) %>
+
+  <%= f.submit "Draft Player" %>
+<% end %>
+
+<%= link_to_function "Select a player", "$('write-in-a-player').hide(); $('select-a-player').show();" %>
+</div>
+</p>
+
+<p>
+  <%= link_to_remote "Suggest Selection", :url => { :action => "suggest_selection", :id => @draft.id } %>
 </p>
 
 <h3>Draft Results by Round</h3>
@@ -95,10 +126,15 @@ i = 0
      <% for team in teams do %>
        <td>
          <% if is_current_pick?(@draft, team, i) %>
-           <span class="on-the-clock">On the clock...</span>
+           <span class="current">On the clock...</span>
          <% else %>
-           <% sel = @draft.selection(i+1,teams.index(team) + 1) %>
-           <span class="selection"><%= sel ? sel.name : '' %></span>
+           <%
+            sel = @draft.selection(i+1,teams.index(team) + 1)
+           %>
+           <span class="selection"><%= sel ? sel.player : '' %></span>
+           <% if (sel && sel == @draft.last_pick) %>
+             <div><%= link_to "Undo Selection", sel, :confirm => "Are you sure you want to undo this selection?", :method => :delete %></div>
+           <% end %>
          <% end %>
        </td>
      <% end %>
@@ -106,13 +142,13 @@ i = 0
   </table>
 <% teams.reverse!; i += 1; end %>
 
-<h3>Draft Results by Player</h3>
+<h3>Drafted Players</h3>
 <div id="drafted-players">
-  <ol>
+  <ul>
     <% @draft.league.drafted_players.each do |p| %>
-      <li><%= p.reverse_name %></li>
+      <li><%= p %></li>
     <% end %>
-  </ol>
+  </ul>
 </div>
 
 <%= link_to 'Edit', edit_draft_path(@draft) %> |
