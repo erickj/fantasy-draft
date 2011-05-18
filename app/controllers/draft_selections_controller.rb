@@ -100,6 +100,13 @@ class DraftSelectionsController < ApplicationController
   # DELETE /draft_selections/1.xml
   def destroy
     @draft_selection = DraftSelection.find(params[:id])
+
+    unless @draft_selection
+      flash[:warning] = "Unable to undo selection"
+      redirect_to :back
+      return
+    end
+
     league_id = @draft_selection.fantasy_player.fantasy_league_id
     name = @draft_selection.name
   

@@ -5,7 +5,7 @@ class Draft < ActiveRecord::Base
     attr_accessor :player
   end
 
-  ROUNDS = 14
+  ROUNDS = 17
   SELECTION_OFFSET = 1
 
   belongs_to :fantasy_league

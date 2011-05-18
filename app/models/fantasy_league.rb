@@ -19,7 +19,7 @@ class FantasyLeague < ActiveRecord::Base
       drafted = drafted_players
 
       @undrafted_players = Player.sort_by_name(all_players.reject do |p|
-        !!drafted.find { |d| d.player.id == p.id }
+        !!drafted.find { |d| d.player.id == p.id } || p.rank.nil?
       end)
     end
     @undrafted_players

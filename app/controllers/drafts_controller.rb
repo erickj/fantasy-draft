@@ -1,16 +1,8 @@
+#require 'lib/draft_rules'
 $:.push('/home/eejjjj82/ruby/gems/gems/ruleby-0.5/lib')
 require 'ruleby'
 
-module CustomLogger
-  def log(*args)
-    RAILS_DEFAULT_LOGGER.method(:debug).call(*args)
-  end
-end
-
-class DraftsController < ApplicationController
-  include Ruleby
-  include CustomLogger
-
+module DraftRules
   module SelectionRulebooks
     PRIORITY_HIGHEST = 100
     PRIORITY_LOWEST  = 1
@@ -18,77 +10,225 @@ class DraftsController < ApplicationController
     class RoundSelectionRulebook < Ruleby::Rulebook
       include CustomLogger
       def rules
-        rule :EarlyRounds, {:priority => PRIORITY_HIGHEST}, 
-             [Draft, :d, m.current_round(&c{ |r| r <= 4 })] do |vars|
+
+        # Select only QB, WR, RB in first 3 rounds
+        rule :EarlyRounds, {:priority => PRIORITY_HIGHEST},
+             [Draft, :d, m.current_round(&c{ |r| r <= 5 })] do |vars|
+log 'retracting non RBs, QBs, WRs'
           engine.facts.find_all do |player|
             player.kind_of?(Player) && ![Player::RB, Player::QB, Player::WR].include?(player.position) 
           end.each do |p|
-            log "retracting %s (%s)"%[p.name,p.position]
             retract p
           end
         end #/rule
 
-        rule :MiddleRounds, {:priority => PRIORITY_HIGHEST}, 
-             [Draft, :d, m.current_round(&c{ |r| r > 4 && r <= 9})] do |vars|
-          log "Is middle rounds"
-        end #/rule
-
-      end
-    end
-
-    class TeamRosterRulebook < Ruleby::Rulebook
-      def rules
-        rule :NeedRBBySecondRound,
-             [Draft, :d, m.current_round == 2],
-             [:not, FantasyTeam, :t, m.have_rb?] do |vars|
+        rule :MidRounds, {:priority => PRIORITY_HIGHEST},
+             [Draft, :d, m.current_round(&c{ |r| r <= 9 })] do |vars|
+log 'retracting non RBs, QBs, WRs, TEs'
           engine.facts.find_all do |player|
-            player.kind_of?(Player) && !player.rb?
+            player.kind_of?(Player) && ![Player::RB, Player::QB, Player::WR, Player::TE].include?(player.position) 
           end.each do |p|
-            log "retracting %s (%s)"%[p.name,p.position]
             retract p
           end
         end #/rule
+
+        # Rank Player Necessity by abundance and round
+        rule :RankPlayerNecessityByRound,
+             [Draft, :d],
+             [Player, :p] do |vars|
+          p = vars[:p]
+          rnd = vars[:d].current_round
+          pos_count_weight = vars[:d].current_team.count_by_pos(p.position)
+     
+          c = 10
+          f = nil
+
+          if pos_count_weight >= (rnd * 0.5) || pos_count_weight >= 4
+            f = c * rnd + pos_count_weight
+            p.detract_rank(f)
+log 'detract rank of %s by %s'%[p,f]
+          else
+            count_factor = pos_count_weight.zero? ? 2 : 1
+            f = c * rnd * count_factor
+            p.boost_rank(f)
+log 'boost rank of %s by %s'%[p,f]
+          end
+        end #/rule
+
+        # Elevate RB extra by 3rd round if none
+        rule :ElevateRB,
+             [Draft, :d, m.current_round(&c{ |rnd| rnd >= 3})],
+             [Player, :p, m.rb? == true],
+             [FantasyTeam, :t, m.count_rb == 0] do |vars|
+          factor = vars[:d].current_round * 15
+          vars[:p].boost_rank(factor)
+        end #/rule
+
+        # Elevate WR extra by 3rd round if none
+        rule :ElevateWR,
+             [Draft, :d, m.current_round(&c{ |rnd| rnd >= 3})],
+             [Player, :p, m.wr? == true],
+             [FantasyTeam, :t, m.count_wr == 0] do |vars|
+          factor = vars[:d].current_round * 15
+          vars[:p].boost_rank(factor)
+        end #/rule
+
+        # Elevate QB extra by 4th round if none
+        rule :ElevateQB,
+             [Draft, :d, m.current_round(&c{ |rnd| rnd >= 4})],
+             [Player, :p, m.qb? == true],
+             [FantasyTeam, :t, m.count_qb == 0] do |vars|
+          factor = vars[:d].current_round * 15
+          vars[:p].boost_rank(factor)
+        end #/rule
+
+=begin
+        # Require a WR by 5th round
+        rule :RequireWRByFourth,
+             [Draft, :d, m.current_round == 5],
+             [FantasyTeam, :t, m.count_wr == 0] do |vars|
+log 'retracting everything but running backs'
+          engine.facts.find_all do |player|
+            player.kind_of?(Player) && !player.wr?
+          end.each do |p|
+            retract p
+          end
+        end #/rule
+
+        # Require a QB by 4th round
+        rule :RequireQBByFourth,
+             [Draft, :d, m.current_round == 4],
+             [FantasyTeam, :t, m.count_qb == 0] do |vars|
+log 'retracting everything but quarter backs'
+          engine.facts.find_all do |player|
+            player.kind_of?(Player) && !player.qb?
+          end.each do |p|
+            retract p
+          end
+        end #/rule
+
+        # No more than 1QBs until 1 RB
+        rule :NoMoreThanOneQBUntilOneRB,
+             [FantasyTeam, :t, m.count_qb(&c{ |rb| rb >= 1}), m.count_rb == 0] do |vars|
+log 'retracting quarter backs'
+          engine.facts.find_all do |player|
+            player.kind_of?(Player) && player.qb?
+          end.each do |p|
+            retract p
+          end
+        end #/rule
+
+        # No more than 1QBs until 1 WR
+        rule :NoMoreThanOneQBUntilOneWR,
+             [FantasyTeam, :t, m.count_qb(&c{ |rb| rb >= 1}), m.count_rb == 0] do |vars|
+log 'retracting quarter backs'
+          engine.facts.find_all do |player|
+            player.kind_of?(Player) && player.qb?
+          end.each do |p|
+            retract p
+          end
+        end #/rule
+
+        # No more than 2 RBs until at least 1 WR
+        rule :NoMoreThanThreeRBUntilOneWR,
+             [FantasyTeam, :t, m.count_rb(&c{ |rb| rb >= 2}), m.count_wr == 0] do |vars|
+log 'retracting running backs'
+          engine.facts.find_all do |player|
+            player.kind_of?(Player) && player.rb?
+          end.each do |p|
+            retract p
+          end
+        end #/rule
+
+        # No more than 3 RBs until at least 1 QB
+        rule :NoMoreThanFourRBUntilOneQB,
+             [FantasyTeam, :t, m.count_rb(&c{ |rb| rb >= 3}), m.count_qb == 0] do |vars|
+log 'retracting running backs'
+          engine.facts.find_all do |player|
+            player.kind_of?(Player) && player.rb?
+          end.each do |p|
+            retract p
+          end
+        end #/rule
+
+        # Don't select 2 WRs until at least 1 RB
+        rule :NoMoreThanTwoWRUntilOneRB,
+             [FantasyTeam, :t, m.count_wr(&c{ |rb| rb >= 1}), m.count_rb == 0] do |vars|
+log 'retracting wide receivers'
+          engine.facts.find_all do |player|
+            player.kind_of?(Player) && player.wr?
+          end.each do |p|
+            retract p
+          end
+        end #/rule
+
+        # Don't select 3 WRs until at least 1 QB
+        rule :NoMoreThanTwoWRUntilOneQB,
+             [FantasyTeam, :t, m.count_wr(&c{ |rb| rb >= 2}), m.count_qb == 0] do |vars|
+log 'retracting wide receivers'
+          engine.facts.find_all do |player|
+            player.kind_of?(Player) && player.wr?
+          end.each do |p|
+            retract p
+          end
+        end #/rule
+
+=end
+
       end
     end
   end
+end
+
+
+class DraftsController < ApplicationController
+  include Ruleby
+  include CustomLogger
+  include DraftRules
 
   def suggest_selection
     @draft = Draft.find(params[:id])
+
+log "Current Team: %s, ID: %d"%[@draft.current_team.name, @draft.current_team.id]
+log @draft.current_team.roster_summary.to_yaml
+
+log "Round: %d"%@draft.current_round
+
 
     filter_players = nil
     engine :engine do |e|
       SelectionRulebooks::RoundSelectionRulebook.new(e).rules
 
       e.assert @draft
-      @draft.available_players.each { |p| e.assert p }
+      e.assert @draft.current_team
+      @draft.available_players.sort { |p1,p2| p1.rank <=> p2.rank }[0,50].each { |p| e.assert p }
 
       e.match
 
       filter_players = e.facts.find_all { |fact| fact.kind_of?(Player) }
+
+#log filter_players.to_yaml
       Draft::SelectionSuggestion.instance.player = filter_players.sort do |p1,p2|
-        p1.rank <=> p2.rank
+log "comparing %s with %s, rank %s vs %s"%[p1,p2,p1.rank.nil?.to_s, p2.rank]
+        p2.calculated_rank <=> p1.calculated_rank
       end.first
     end
 
-    log "There are %d players remaining"%@draft.available_players.length
-    log "QB: %d"%@draft.available_players.find_all { |p| p.qb? }.length
-    log "RB: %d"%@draft.available_players.find_all { |p| p.rb? }.length
-    log "WR: %d"%@draft.available_players.find_all { |p| p.wr? }.length
-    log "TE: %d"%@draft.available_players.find_all { |p| p.te? }.length
-    log "K: %d"%@draft.available_players.find_all { |p| p.k? }.length
-    log "D: %d"%@draft.available_players.find_all { |p| p.d? }.length
+    log "Suggesting: %s"%Draft::SelectionSuggestion.instance.player
+    tpl = <<JS
+$('draft_selection_fantasy_player_id').value = %d;
+$('suggestion-selection').update('>> %s');
+$('top-suggestions').update('%s');
+JS
 
-    log "There are %d players remaining after filtration"%filter_players.length
-    log "QB: %d"%filter_players.find_all { |p| p.qb? }.length
-    log "RB: %d"%filter_players.find_all { |p| p.rb? }.length
-    log "WR: %d"%filter_players.find_all { |p| p.wr? }.length
-    log "TE: %d"%filter_players.find_all { |p| p.te? }.length
-    log "K: %d"%filter_players.find_all { |p| p.k? }.length
-    log "D: %d"%filter_players.find_all { |p| p.d? }.length
-  
-    render :update do |page|
-      page.alert('I suggest: %s'%Draft::SelectionSuggestion.instance.player.name );
-    end
+    js = tpl%[Draft::SelectionSuggestion.instance.player.id,
+              Draft::SelectionSuggestion.instance.player,
+              @draft.available_players.sort { |p1,p2| p2.calculated_rank <=> p1.calculated_rank }[0..19].inject('') do |memo,p|
+                memo << "<li>%s - %s</li>"%[p, p.calculated_rank.to_s]
+              end
+             ]
+
+    render :js => js
   end
 
   def league_draft

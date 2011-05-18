@@ -11,6 +11,13 @@ class Player < ActiveRecord::Base
   alias :team :pro_team
 
   class << self
+    def num_players
+      unless @num
+        @num = Player.all.length
+      end
+      @num
+    end
+
     def positions
       [RB, QB, WR, TE, D, K]
     end
@@ -67,4 +74,39 @@ class Player < ActiveRecord::Base
   def te?
     is_position?(TE)
   end
+
+  # number btwn 0-100
+  def boost_rank(boost)
+    rank_boosts.push(boost)
+  end
+
+  # number btwn 0-100
+  def detract_rank(detract)
+    rank_detractions.push(detract)
+  end
+
+  def rank_boosts
+    @boosts ||= Array.new
+    @boosts
+  end
+
+  def rank_detractions
+    @detractions ||= Array.new
+    @detractions
+  end
+
+  def calculated_rank
+    calc = (Player.num_players.to_f / rank.to_f).to_f
+
+    boost = rank_boosts.inject(0) do |memo,b|
+      memo = memo + b
+    end
+
+    detract = rank_detractions.inject(0) do |memo, d|
+      memo = memo + d
+    end
+
+    calc + (calc * boost/100) - (calc * detract/100)
+  end
+
 end

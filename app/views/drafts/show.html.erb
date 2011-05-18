@@ -1,4 +1,16 @@
 <style type="text/css">
+.f-left {
+  float: left;
+}
+
+.clr-left {
+  clear: left;
+}
+
+.clr-right {
+  clear: right;
+}
+
 dt {
   font-weight: bold
 }
@@ -47,6 +59,10 @@ table#draft-results th {
   font-weight: bold;
 }
 
+#suggestion-selection {
+  background-color: #FAEA70;
+}
+
 </style>
 
 <h2>Draft: <%= link_to @draft.league.name, @draft.league %></h2>
@@ -64,7 +80,7 @@ i = 0
   <dd><%= @draft.current_overall_selection %></dd>
   <dt>On the Clock</dt>
   <dd><%= @draft.current_team.name %></dd>
-  <dt>Next Three on the Clock</dt>
+  <dt>Next on the Clock</dt>
   <dd><%= @draft.next_team.name %></dd>
 </dl>
 
@@ -80,7 +96,7 @@ i = 0
 
   <%= player_select(f, @draft) %>
 
-  <%= f.submit "Draft Player" %>
+  <%= f.submit "Draft Player", :disable_with => "Processing..." %>
 <% end %>
 
 <%= link_to_function "Write in a player", "$('write-in-a-player').show(); $('select-a-player').hide();" %>
@@ -97,15 +113,16 @@ i = 0
   <%= f.hidden_field(:round, { :value => @draft.current_round }) %>
   <%= f.hidden_field(:pick, { :value => @draft.current_pick }) %>
 
-  <%= f.submit "Draft Player" %>
+  <%= f.submit "Draft Player", :disable_with => "Processing..." %>
 <% end %>
 
 <%= link_to_function "Select a player", "$('write-in-a-player').hide(); $('select-a-player').show();" %>
 </div>
 </p>
 
-<p>
+<p id="suggestion-wrapper">
   <%= link_to_remote "Suggest Selection", :url => { :action => "suggest_selection", :id => @draft.id } %>
+  <div id="suggestion-selection"></div>
 </p>
 
 <h3>Draft Results by Round</h3>
@@ -142,13 +159,32 @@ i = 0
   </table>
 <% teams.reverse!; i += 1; end %>
 
-<h3>Drafted Players</h3>
-<div id="drafted-players">
+<div class="clr-left clr-right">
+<div class="f-left">
+  <h3>Drafted Players</h3>
+  <div id="drafted-players">
+    <ul>
+      <% @draft.league.drafted_players.each do |p| %>
+        <li><%= p %></li>
+      <% end %>
+    </ul>
+  </div>
+</div>
+<div class="f-left">
+  <h3>Current Roster for <%= @draft.current_team.name %></h3>
   <ul>
-    <% @draft.league.drafted_players.each do |p| %>
+    <% @draft.current_team.roster.each do |p| %>
       <li><%= p %></li>
     <% end %>
   </ul>
+</div>
+
+<div class="f-left">
+  <h3>Top Choices</h3>
+  <ol id="top-suggestions">
+  </ol>
+</div>
+
 </div>
 
 <%= link_to 'Edit', edit_draft_path(@draft) %> |

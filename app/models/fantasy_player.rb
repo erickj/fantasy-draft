@@ -7,21 +7,8 @@ class FantasyPlayer < ActiveRecord::Base
     player.to_s
   end
 
-  def name
-    player.name
-  end
-
-  def reverse_name
-    person_pattern = /^([^\s]*)[\s]+(.*)$/
-    defense_pattern = /(.*)D\/ST$/
- 
-    case name
-    when defense_pattern
-      name
-    when person_pattern
-      "%s, %s"%[$2, $1]
-    else
-      name
-    end
+  def method_missing(m, *args)
+    return player.method(m).call(*args) if player.respond_to?(m)
+    super
   end
 end
